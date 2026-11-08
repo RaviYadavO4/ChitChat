@@ -1,6 +1,5 @@
 package com.portfolio.chitchat.ui.chat
 
-import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,12 +10,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.VideoCall
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,7 +46,6 @@ fun ChatScreen(
     val isChatLoading by viewModel.isChatLoading.collectAsState()
     val context = LocalContext.current
 
-    // Premium Interaction Menu States System (Flipkart Standard Interface Mapping)
     var selectedMessageForAction by remember { mutableStateOf<Message?>(null) }
     var showActionBottomSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -71,13 +67,11 @@ fun ChatScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClicked) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Navigation", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) { Icon(Icons.Filled.VideoCall, contentDescription = "Video Call", tint = Color.White) }
-                    IconButton(onClick = { }) { Icon(Icons.Filled.Call, contentDescription = "Voice Call", tint = Color.White) }
-                    IconButton(onClick = { }) { Icon(Icons.Filled.MoreVert, contentDescription = "More Menu Options", tint = Color.White) }
+                    IconButton(onClick = { }) { Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = Color.White) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = WhatsappTealGreen)
             )
@@ -95,39 +89,16 @@ fun ChatScreen(
                 .background(Color(0xFFECE5DD))
         ) {
             if (isChatLoading) {
-                // 1. High-Fidelity Alternating Shimmer Skeleton Framework
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
+                LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(6) { index ->
                         val alignmentSetting = if (index % 2 == 0) Alignment.CenterEnd else Alignment.CenterStart
-                        val widthPercentage = if (index % 3 == 0) 0.65f else if (index % 2 == 0) 0.45f else 0.55f
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = alignmentSetting
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(widthPercentage)
-                                    .height(45.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .shimmerEffect()
-                            )
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = alignmentSetting) {
+                            Box(modifier = Modifier.fillMaxWidth(if (index % 2 == 0) 0.5f else 0.7f).height(45.dp).clip(RoundedCornerShape(8.dp)).shimmerEffect())
                         }
                     }
                 }
             } else {
-                // 2. Real-Time Conversation Stream Active Layout Matrix
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentPadding = PaddingValues(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(liveMessages, key = { it.messageId }) { fbMessage ->
                         Box(
                             modifier = Modifier
@@ -150,32 +121,20 @@ fun ChatScreen(
                                     }
                                 )
                         ) {
-                            // Corrected Callout: Clashing high-order parameters block isolated to Box wrapper layer
                             MessageBubble(message = fbMessage)
                         }
                     }
                 }
             }
 
-            // 3. Contextual Options Sheets Framework (Flipkart Vibe Matrix Rules)
             if (showActionBottomSheet && selectedMessageForAction != null) {
-                ModalBottomSheet(
-                    onDismissRequest = { showActionBottomSheet = false },
-                    containerColor = Color.White
-                ) {
+                ModalBottomSheet(onDismissRequest = { showActionBottomSheet = false }, containerColor = Color.White) {
                     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
-                        Text(
-                            text = "Message Options",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = WhatsappTealGreen,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                        Text(text = "Message Options", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WhatsappTealGreen, modifier = Modifier.padding(16.dp))
 
                         val currentAuthUid = remember { com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: "" }
                         val isMyOwnMessage = selectedMessageForAction!!.senderId == currentAuthUid
 
-                        // Edit functionality reserved explicitly for outgoing text elements
                         if (isMyOwnMessage && selectedMessageForAction!!.type == "text") {
                             ListItem(
                                 headlineContent = { Text("Edit Message", color = Color.Black) },
@@ -184,7 +143,6 @@ fun ChatScreen(
                             )
                         }
 
-                        // Intelligent Double-State Selection Filters
                         if (isMyOwnMessage) {
                             ListItem(
                                 headlineContent = { Text("Delete for Everyone", color = Color.Red) },
@@ -198,12 +156,13 @@ fun ChatScreen(
 
                         ListItem(
                             headlineContent = { Text("Delete for Me", color = Color.Black) },
-                            leadingContent = { Icon(Icons.Filled.Delete, contentDescription = "Delete Local Me", tint = Color.Gray) },
+                            leadingContent = { Icon(Icons.Filled.Delete, contentDescription = "Delete Me", tint = Color.Gray) },
                             modifier = Modifier.clickable {
                                 showActionBottomSheet = false
                                 viewModel.requestDeleteForMe(receiverUid, selectedMessageForAction!!.messageId)
                             }
                         )
+
                         ListItem(
                             headlineContent = { Text("Message Info", color = Color.Black) },
                             leadingContent = { Icon(Icons.Filled.Info, contentDescription = "Info", tint = Color.Gray) },
@@ -212,18 +171,13 @@ fun ChatScreen(
                     }
                 }
             }
-// 4. Text Modification Dialog Widget
+
             if (showEditDialog && selectedMessageForAction != null) {
                 AlertDialog(
                     onDismissRequest = { showEditDialog = false },
-                    title = { Text("Edit Message text", fontWeight = FontWeight.Bold) },
+                    title = { Text("Edit Message text") },
                     text = {
-                        OutlinedTextField(
-                            value = editTextFieldState,
-                            onValueChange = { editTextFieldState = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = WhatsappTealGreen)
-                        )
+                        OutlinedTextField(value = editTextFieldState, onValueChange = { editTextFieldState = it }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = WhatsappTealGreen))
                     },
                     confirmButton = {
                         TextButton(onClick = {
@@ -233,12 +187,9 @@ fun ChatScreen(
                             }
                         }) { Text("UPDATE", color = WhatsappTealGreen, fontWeight = FontWeight.Bold) }
                     },
-                    dismissButton = {
-                        TextButton(onClick = { showEditDialog = false }) { Text("CANCEL", color = Color.Gray) }
-                    }
+                    dismissButton = { TextButton(onClick = { showEditDialog = false }) { Text("CANCEL", color = Color.Gray) } }
                 )
             }
-// 5. Detailed Tracking Metrices Timestamp Panel (Message Info)
             if (showInfoDialog && selectedMessageForAction != null) {
                 val formattedTime = remember(selectedMessageForAction!!.timestamp) {
                     val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
@@ -246,7 +197,7 @@ fun ChatScreen(
                 }
                 AlertDialog(
                     onDismissRequest = { showInfoDialog = false },
-                    title = { Text("Message Info", fontWeight = FontWeight.Bold) },
+                    title = { Text("Message Info") },
                     text = {
                         Column {
                             Text(text = "Ticks Status: ${selectedMessageForAction!!.status.replaceFirstChar { it.uppercase() }}", fontSize = 16.sp, color = Color.Black)
@@ -254,9 +205,7 @@ fun ChatScreen(
                             Text(text = "Timestamp: $formattedTime", fontSize = 14.sp, color = Color.Gray)
                         }
                     },
-                    confirmButton = {
-                        TextButton(onClick = { showInfoDialog = false }) { Text("OK", color = WhatsappTealGreen, fontWeight = FontWeight.Bold) }
-                    }
+                    confirmButton = { TextButton(onClick = { showInfoDialog = false }) { Text("OK", color = WhatsappTealGreen, fontWeight = FontWeight.Bold) } }
                 )
             }
         }

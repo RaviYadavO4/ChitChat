@@ -11,17 +11,6 @@ sealed class Screen(val route: String) {
     object Chat : Screen("chat_screen/{name}/{uid}") {
         fun passNameAndUid(name: String, uid: String) = "chat_screen/$name/$uid"
     }
-    object VoiceCall : Screen("voice_call_screen/{name}") {
-        fun passName(name: String) = "voice_call_screen/$name"
-    }
-
-
-    object VideoCall : Screen("video_call_screen/{name}") {
-        fun passName(name: String) = "video_call_screen/$name"
-    }
-    object StatusViewer : Screen("status_viewer_screen/{name}") {
-        fun passName(name: String) = "status_viewer_screen/$name"
-    }
     object SelectContact : Screen("select_contact_screen")
     object CreateGroup : Screen("create_group_screen")
     object Settings : Screen("settings_screen")
