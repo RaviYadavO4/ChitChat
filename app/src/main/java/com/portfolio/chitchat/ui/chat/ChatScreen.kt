@@ -66,7 +66,7 @@ fun ChatScreen(
                     Column {
                         Text(text = userName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Text(
-                            text = if (isGroup) "👥 Group Chat" else "🔒 End-to-end encrypted",
+                            text = if (isGroup) "👥 Group Chat • Read by all members" else "🔒 End-to-end encrypted",
                             fontSize = 11.sp,
                             color = Color.White.copy(alpha = 0.85f)
                         )
