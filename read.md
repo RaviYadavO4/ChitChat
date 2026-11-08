@@ -1,62 +1,85 @@
-# ChitChat 💬 - Premium Real-Time WhatsApp Clone
+<div align="center">
 
-ChitChat is a high-fidelity, high-performance, single-device log real-time messaging application designed with clean design standards for modern Android systems. Built entirely using **Jetpack Compose** and **Kotlin**, following absolute **MVVM (Model-View-ViewModel) Clean Architecture** workflows to maximize scalability, production security, and loose decoupling parameters.
+# ChitChat 💬 
+### Premium Real-Time 1-on-1 Android Messaging Application
+
+[![Kotlin](https://img.shields.io/badge/Language-Kotlin%202.2-purple.svg)](https://kotlinlang.org)
+[![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-blue.svg)](https://developer.android.com/jetpack/compose)
+[![Material3](https://img.shields.io/badge/Design-Material3-green.svg)](https://m3.material.io)
+[![Architecture](https://img.shields.io/badge/Architecture-MVVM-orange.svg)](https://developer.android.com/topic/architecture)
+[![Firebase](https://img.shields.io/badge/Backend-Firebase%20Firestore-yellow.svg)](https://firebase.google.com)
+
+*A high-performance, production-grade real-time messaging application designed with clean architecture principles for modern Android systems.*
+
+</div>
 
 ---
 
-## 🎨 Premium Features (UI-First Architecture)
+## 🌟 Key Features (UI-First & Modern Android)
 
-- **Authentic Verification Interface**: Minimalist splash framework leading to precise Country-Code parsed Phone Login inputs and an integrated 6-Digit discrete auto-focus OTP Verification module with dynamic live countdown ticking feedback loops.
-- **Dynamic Theme Engineering**: Real-time seamless dark/light palette swapping module configured locally, altering system components instantly inside sub-settings dialog frames.
-- **Identical WhatsApp Component Structure**: High-fidelity conversations windows with absolute alignment message bubbles, structural TabLayout swipe engines, floating message navigation FAB matrices, call details logs and full timed status progress overlays.
-- **Interactive Sandbox Settings**: Fully operational sub-settings modules for Accounts, Notification triggers, dynamic radio picker theme components and responsive custom visual workflows.
+- **🔐 Secure Phone Authentication**: Seamless OTP verification powered by Firebase Auth with auto-focus inputs and dynamic countdown timers.
+- **⚡ Real-Time 1-on-1 Chat Channels**: Instant message dispatching and real-time synchronization using Cloud Firestore snapshot listeners.
+- **🖼️ Advanced Media Sharing**:
+  - **Smart Image Compression**: Aggressive downscaling and 50% JPEG quality reduction keeping payloads under 150KB to respect Firestore's 1MB document limit.
+  - **Document Sharing**: Secure temporary cache dumps with native Android Document Viewer intents (`Intent.ACTION_VIEW`).
+  - **Voice Notes**: Native audio recording and playback support.
+- **💬 Message Context Operations**: Long-press bottom sheets supporting 'Edit Message', 'Delete for Everyone', 'Delete for Me', and detailed message info timestamps.
+- **✓✓ Multi-State Read Ticks**: Live status updates (Sent `✓` -> Delivered `✓✓` -> Read Blue `✓✓`).
+- **🎨 Dynamic Theme Engine**: Real-time dark/light mode palette swapping configured locally inside settings.
+- **✨ Shimmer Skeleton Loaders**: Fluid animated loading placeholders ensuring silky-smooth UX during network syncs.
 
 ---
 
-## 🛠️ Architecture & Modern Tech Stack
+## 🛠️ Architecture & Tech Stack
 
-| Module | Core Technology Component / Framework |
+| Domain | Technology / Framework |
 | :--- | :--- |
-| **Language** | Modern Core Native Kotlin |
-| **UI Framework** | 100% Declarative Jetpack Compose (Material3 System) |
-| **Architecture** | MVVM (Model-View-ViewModel) + Repository Design Pattern |
-| **Navigation** | Jetpack Type-Safe Navigation Compose Engine |
-| **Conventions** | Explicit `.dp` & `.sp` parameter separation models |
+| **Language** | Modern Native Kotlin |
+| **UI Toolkit** | 100% Declarative Jetpack Compose (Material 3) |
+| **Architecture Pattern** | MVVM (Model-View-ViewModel) + Repository Pattern |
+| **Asynchronous Streams** | Kotlin Coroutines & `StateFlow` |
+| **Navigation** | Jetpack Type-Safe Navigation Compose |
+| **Backend & Database** | Firebase Authentication & Cloud Firestore (Real-Time) |
 
 ---
 
-## 📂 Production Package Structure Mapping
+## 📂 Production Package Structure
 
 ```text
 com.portfolio.chitchat
 │
-├── data            # Clean Models, Remote Entities & Database Repositories
+├── data            # Models (User, Chat, Message) & Repositories (Auth, Chat, Contact, Dashboard)
 │
-├── navigation      # Type-Safe Screen Route Mappings & NavGraph Controller Engines
+├── navigation      # Type-Safe Screen Route Mappings & NavGraph Controller
 │
 ├── ui              # High-Fidelity UI Interface Layers
-│   ├── auth        # Login Components, Discrete OTP and Profile Creators
-│   ├── calling     # Overlay Video Streams & Blurred Voice Avatars
-│   ├── dashboard   # TabLayout Holders, Swipable Pages & Active FAB Tokens
-│   ├── chat        # Visual Wallpaper Bubbles, Message Windows & Inputs
-│   ├── status      # Timed Progress Story Overlay Simulators
-│   ├── settings    # Live Profile Config Contexts & Dialog State Changers
-│   └── theme       # Color.kt Palettes, Theme.kt Swappers & Fonts Typography
+│   ├── auth        # Login, OTP Verification, and Profile Setup Screens
+│   ├── chat        # Chat Windows, Message Bubbles, Input Bar, and Preview Screens
+│   ├── contacts    # Contact Picker & Selection Screens
+│   ├── dashboard   # Active Chats Feed & Settings Navigation
+│   ├── settings    # Account & Theme Customization Settings
+│   └── theme       # Color Palettes, Typography, and Theme Swappers
 │
-└── utils           # Loose Helper Classes & Engine Core Constants
+└── utils           # Helper Engines (AudioPlayer, AudioRecorder, FileUtils, ImageUtils, ShimmerEffect)
 ```
 
 ---
 
-## 🚀 Execution & Setup Instructions
+## 🚀 Getting Started & Setup
 
-1. Clone this repository directly onto your local environment:
-   ```bash
-   git clone https://github.com/RaviYadavO4/ChitChat.git
-   ```
-2. Open the project folder inside **Android Studio**.
-3. Let the Gradle synchronization metrics automatically resolve core dependencies.
-4. Hit **Run** (`Shift + F10`) to deploy the high-fidelity UI layout matrix live onto your emulator or device sandbox environment!
+1. **Clone the repository**:
+   `git clone https://github.com/RaviYadavO4/ChitChat.git`
+2. **Open in Android Studio**:
+   - Open Android Studio and select *Open an Existing Project*.
+   - Navigate to the cloned `ChitChat` directory.
+3. **Configure Firebase**:
+   - Add your `google-services.json` file inside the `app/` directory.
+4. **Sync & Run**:
+   - Let Gradle sync all dependencies automatically.
+   - Hit **Run** (`Shift + F10`) to launch the app on your emulator or physical device!
 
 ---
-*Developed with absolute design perfection by your portfolio developer team as a production-grade freelancing showcase artifact.*
+
+<div align="center">
+  <p><i>Developed with absolute design perfection as a production-grade portfolio showcase artifact.</i></p>
+</div>
