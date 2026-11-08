@@ -70,6 +70,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")        // Phone SMS Auth Registry
     implementation("com.google.firebase:firebase-firestore")   // Real-Time Chat Channels
     implementation("com.google.firebase:firebase-storage")     // Media & Profile Images
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
 
     // Coroutines core library jismein Flows aur StateFlow hote hain
@@ -77,4 +78,8 @@ dependencies {
 
     // Agar aap Android dev kar rahe hain, toh isko bhi add karein
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+
+//    implementation("com.google.accompanist:accompanist-permissions:0.37.3")
+
+
 }

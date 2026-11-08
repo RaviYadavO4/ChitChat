@@ -1,6 +1,7 @@
 package com.portfolio.chitchat.ui.auth
 
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,8 +35,21 @@ fun ProfileSetupScreen(
 
     val context = LocalContext.current
     val authState by viewModel.authState.collectAsState()
+    val existingProfile by viewModel.existingProfile.collectAsState()
 
-    // Gallery Picker Engine capturing stream vectors
+    // Step 3.1: Trigger checking for existing user profile when screen launches
+    LaunchedEffect(Unit) {
+        viewModel.checkForExistingProfile()
+    }
+
+    // Step 3.2: Auto-fill the parameters when database fetches existing details
+    LaunchedEffect(existingProfile) {
+        existingProfile?.let {
+            userName = it.name
+            imageBase64String = it.profileImageBase64
+        }
+    }
+
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -43,9 +57,7 @@ fun ProfileSetupScreen(
             val converted = ImageUtils.uriToBase64(context, it)
             if (converted != null) {
                 imageBase64String = converted
-                Toast.makeText(context, "Image Processed Successfully", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "Image conversion failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Image Processed", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -54,7 +66,7 @@ fun ProfileSetupScreen(
         if (authState is AuthState.ProfileCreated && (authState as AuthState.ProfileCreated).success) {
             onProfileFinishedNav()
         } else if (authState is AuthState.Error) {
-            Toast.makeText(context, (authState as AuthState.Error).message, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, (authState as AuthState.Error).message, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -78,7 +90,7 @@ fun ProfileSetupScreen(
                 .clickable { galleryLauncher.launch("image/*") },
             contentAlignment = Alignment.Center
         ) {
-            Icon(imageVector = Icons.Filled.PhotoCamera, contentDescription = "Select Photo", modifier = Modifier.size(36.dp), tint = Color.Gray)
+            Icon(imageVector = Icons.Filled.PhotoCamera, contentDescription = "Photo", modifier = Modifier.size(36.dp), tint = Color.Gray)
         }
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -99,8 +111,7 @@ fun ProfileSetupScreen(
             Button(
                 onClick = {
                     if (userName.isNotBlank()) {
-                        // Unique hardware profile identifier fetch to ensure Single-Device constraint matrix rules
-                        val deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                        val deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
                         viewModel.saveProfile(userName, imageBase64String, deviceId)
                     } else {
                         Toast.makeText(context, "Name cannot be empty", Toast.LENGTH_SHORT).show()

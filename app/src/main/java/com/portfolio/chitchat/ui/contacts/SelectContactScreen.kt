@@ -1,5 +1,7 @@
 package com.portfolio.chitchat.ui.contacts
 
+
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,19 +14,21 @@ import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.portfolio.chitchat.data.model.User
+import com.portfolio.chitchat.data.repository.ContactRepository
 import com.portfolio.chitchat.ui.theme.WhatsappTealGreen
+import com.portfolio.chitchat.utils.ImageUtils
+
 
 data class DummyContact(val id: String, val name: String, val status: String)
 
@@ -33,32 +37,26 @@ data class DummyContact(val id: String, val name: String, val status: String)
 fun SelectContactScreen(
     onBackClicked: () -> Unit,
     onCreateGroupClicked: () -> Unit,
-    onContactSelected: (String) -> Unit // Navigates directly to the dynamic chat screen
+    onContactSelected: (String, String) -> Unit // Updated to pass both Name and explicit UID
 ) {
-    val dummyContacts = remember {
-        listOf(
-            DummyContact("1", "Aman Verma", "Hey there! I am using ChitChat."),
-            DummyContact("2", "Bhavna Singh", "Busy at work. Messages only."),
-            DummyContact("3", "Rahul Sharma", "Available"),
-            DummyContact("4", "Vikram Singh", "Coding all night 🚀"),
-            DummyContact("5", "Deepak Kumar", "At the gym 🏋️‍♂️"),
-            DummyContact("6", "Neha Gupta", "Can't talk, ChitChat only.")
-        )
-    }
+    val repository = remember { ContactRepository() }
+    var contactsList by remember { mutableStateOf<List<User>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // State management for local real-time search engine
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    // Multi-criteria filter matching user input query dynamically
-    val filteredContacts = remember(searchQuery) {
-        if (searchQuery.isBlank()) {
-            dummyContacts
-        } else {
-            dummyContacts.filter {
-                it.name.contains(searchQuery, ignoreCase = true) ||
-                        it.status.contains(searchQuery, ignoreCase = true)
-            }
+    // Fetch live users directly on interface launch
+    LaunchedEffect(Unit) {
+        repository.fetchAllChitChatContacts { fetched ->
+            contactsList = fetched
+            isLoading = false
+        }
+    }
+
+    val filteredContacts = remember(searchQuery, contactsList) {
+        if (searchQuery.isBlank()) contactsList else {
+            contactsList.filter { it.name.contains(searchQuery, ignoreCase = true) }
         }
     }
 
@@ -70,12 +68,11 @@ fun SelectContactScreen(
                         TextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search contacts...", color = Color.White.copy(alpha = 0.6f), fontSize = 16.sp) },
+                            placeholder = { Text("Search contacts...", color = Color.White.copy(alpha = 0.6f)) },
                             singleLine = true,
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
                                 focusedTextColor = Color.White
@@ -85,86 +82,73 @@ fun SelectContactScreen(
                     } else {
                         Column {
                             Text(text = "Select contact", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text(text = "${dummyContacts.size} contacts", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                            Text(text = "${contactsList.size} contacts", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                         }
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (isSearchActive) {
-                            isSearchActive = false
-                            searchQuery = ""
-                        } else {
-                            onBackClicked()
-                        }
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Navigation", tint = Color.White)
+                    IconButton(onClick = { if (isSearchActive) { isSearchActive = false; searchQuery = "" } else onBackClicked() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        if (isSearchActive) {
-                            searchQuery = ""
-                        } else {
-                            isSearchActive = true
-                        }
-                    }) {
-                        Icon(
-                            imageVector = if (isSearchActive) Icons.Filled.Close else Icons.Filled.Search,
-                            contentDescription = "Search Trigger Action Toggle",
-                            tint = Color.White
-                        )
+                    IconButton(onClick = { isSearchActive = !isSearchActive; if(!isSearchActive) searchQuery = "" }) {
+                        Icon(imageVector = if (isSearchActive) Icons.Filled.Close else Icons.Filled.Search, contentDescription = "Search", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = WhatsappTealGreen)
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color.White)
-        ) {
-            // Action headers hide automatically when filtering to prioritize matches
-            if (!isSearchActive || searchQuery.isBlank()) {
-                item {
-                    ActionContactRow(icon = Icons.Filled.GroupAdd, title = "New group", onClick = onCreateGroupClicked)
-                    ActionContactRow(icon = Icons.Filled.PersonAdd, title = "New contact", onClick = { })
-                    Text(
-                        text = "Contacts on ChitChat",
-                        fontSize = 14.sp,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                    )
-                }
-            }
-
-            if (filteredContacts.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "No contacts match your search.", color = Color.Gray, fontSize = 14.sp)
-                    }
-                }
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues).background(Color.White)) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = WhatsappTealGreen)
             } else {
-                items(filteredContacts) { contact ->
-                    Surface(
-                        onClick = { onContactSelected(contact.name) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        ContactListItemRow(contact)
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    if (!isSearchActive || searchQuery.isBlank()) {
+                        item {
+                            ActionContactRow(icon = Icons.Filled.GroupAdd, title = "New group", onClick = onCreateGroupClicked)
+                            ActionContactRow(icon = Icons.Filled.PersonAdd, title = "New contact", onClick = { })
+                            Text(text = "Contacts on ChitChat", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+                        }
+                    }
+
+                    items(filteredContacts) { contact ->
+                        Surface(
+                            onClick = { onContactSelected(contact.name, contact.uid) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            LiveContactRow(contact)
+                        }
                     }
                 }
             }
         }
     }
 }
+
+@Composable
+fun LiveContactRow(user: User) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (user.profileImageBase64.isNotBlank()) {
+            val bitmap = remember(user.profileImageBase64) { ImageUtils.base64ToBitmap(user.profileImageBase64) }
+            bitmap?.let {
+                Image(bitmap = it.asImageBitmap(), contentDescription = "Avatar", modifier = Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+            }
+        } else {
+            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(text = user.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Text(text = user.statusText, fontSize = 13.sp, color = Color.Gray, maxLines = 1)
+        }
+    }
+}
+
 
 @Composable
 fun ActionContactRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, onClick: () -> Unit) {
@@ -188,19 +172,4 @@ fun ActionContactRow(icon: androidx.compose.ui.graphics.vector.ImageVector, titl
     }
 }
 
-@Composable
-fun ContactListItemRow(contact: DummyContact) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
-            Text(text = contact.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-            Text(text = contact.status, fontSize = 13.sp, color = Color.Gray, maxLines = 1)
-        }
-    }
-}
+

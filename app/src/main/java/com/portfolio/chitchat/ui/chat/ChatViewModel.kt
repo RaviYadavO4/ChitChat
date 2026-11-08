@@ -15,22 +15,44 @@ class ChatViewModel : ViewModel() {
     private val _conversationMessages = MutableStateFlow<List<Message>>(emptyList())
     val conversationMessages: StateFlow<List<Message>> = _conversationMessages
 
-    // Activates persistent pipeline hooks for instant text/media updates
+    private val _isChatLoading = MutableStateFlow(true)
+    val isChatLoading: StateFlow<Boolean> = _isChatLoading
+
+    private val _activePreviewPayload = MutableStateFlow("")
+    val activePreviewPayload: StateFlow<String> = _activePreviewPayload
+
     fun loadAndWatchMessages(receiverUid: String) {
+        _isChatLoading.value = true
         viewModelScope.launch {
             repository.listenToMessages(receiverUid)
-                .catch { _conversationMessages.value = emptyList() }
+                .catch {
+                    _conversationMessages.value = emptyList()
+                    _isChatLoading.value = false
+                }
                 .collect { messages ->
                     _conversationMessages.value = messages
+                    _isChatLoading.value = false
                 }
         }
     }
 
     fun dispatchMessage(receiverUid: String, text: String, type: String = "text", base64Payload: String = "") {
-        if (text.isNotBlank() || base64Payload.isNotBlank()) {
-            repository.sendMessage(receiverUid, text, type, base64Payload) { success ->
-                // Visual transmission indicators or local trace updates can be set here if required
-            }
-        }
+        repository.sendMessage(receiverUid, text, type, base64Payload) { }
+    }
+
+    fun cachePreviewPayload(payload: String) {
+        _activePreviewPayload.value = payload
+    }
+
+    fun requestMessageEdit(receiverUid: String, messageId: String, updatedText: String) {
+        repository.editMessageText(receiverUid, messageId, updatedText) { }
+    }
+
+    fun requestDeleteForEveryone(receiverUid: String, messageId: String) {
+        repository.deleteMessageForEveryone(receiverUid, messageId) { }
+    }
+
+    fun requestDeleteForMe(receiverUid: String, messageId: String) {
+        repository.deleteMessageForMeOnly(receiverUid, messageId) { }
     }
 }

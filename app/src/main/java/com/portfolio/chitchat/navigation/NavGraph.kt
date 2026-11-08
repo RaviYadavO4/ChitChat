@@ -15,6 +15,9 @@ import com.portfolio.chitchat.ui.auth.ProfileSetupScreen
 import com.portfolio.chitchat.ui.dashboard.DashboardScreen
 import com.portfolio.chitchat.ui.splash.SplashScreen
 import com.portfolio.chitchat.ui.chat.ChatScreen
+import com.portfolio.chitchat.ui.chat.ChatViewModel
+import com.portfolio.chitchat.ui.chat.ImagePreviewScreen
+import com.portfolio.chitchat.ui.chat.PdfPreviewScreen
 import com.portfolio.chitchat.ui.calling.VoiceCallScreen
 import com.portfolio.chitchat.ui.calling.VideoCallScreen
 import com.portfolio.chitchat.ui.status.StatusViewerScreen
@@ -32,65 +35,57 @@ fun SetupNavGraph(
     isDarkMode: Boolean,
     onThemeChanged: (Boolean) -> Unit
 ) {
-    // Single shared instance of AuthViewModel spanning authentication sequence lifecycle
     val authViewModel: AuthViewModel = viewModel()
+
+    // Shared Chat ViewModel scope protecting large payload streams from route overflow crashes
+    val sharedChatViewModel: ChatViewModel = viewModel()
 
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
     ) {
-        // 1. Splash Screen (3 Seconds Dynamic Auto-Timer to Login)
+        // 1. Splash Screen with Persistent Active Session Route Checker Logic
         composable(route = Screen.Splash.route) {
             SplashScreen()
             LaunchedEffect(key1 = true) {
                 delay(3000L)
-                navController.navigate(Screen.Login.route) {
-                    popUpTo(Screen.Splash.route) { inclusive = true }
+                val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                if (currentUser != null) {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                } else {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
                 }
             }
         }
 
-        // 2. Mobile Phone Authentication Login Screen with ViewModel Integration
+        // 2. Phone Login Screen
         composable(route = Screen.Login.route) {
-            LoginScreen(
-                viewModel = authViewModel,
-                onOtpSentNav = { fullPhone ->
-                    navController.navigate(Screen.Otp.passPhone(fullPhone))
-                }
-            )
+            LoginScreen(viewModel = authViewModel, onOtpSentNav = { phone -> navController.navigate(Screen.Otp.passPhone(phone)) })
         }
 
-        // 3. Dynamic OTP Verification Screen with Shared ViewModel Integration
-        composable(
-            route = Screen.Otp.route,
-            arguments = listOf(navArgument("phone") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val phone = backStackEntry.arguments?.getString("phone") ?: ""
-            OtpScreen(
-                phoneNumber = phone,
-                viewModel = authViewModel,
-                onVerifiedNav = {
-                    navController.navigate(Screen.ProfileSetup.route)
-                }
-            )
+        // 3. OTP Screen
+        composable(route = Screen.Otp.route, arguments = listOf(navArgument("phone") { type = NavType.StringType })) { entry ->
+            val phone = entry.arguments?.getString("phone") ?: ""
+            OtpScreen(phoneNumber = phone, viewModel = authViewModel, onVerifiedNav = { navController.navigate(Screen.ProfileSetup.route) })
         }
 
-        // 4. Initial User Profile Setup Screen with Shared ViewModel Integration
+        // 4. User Profile Creation Setup
         composable(route = Screen.ProfileSetup.route) {
-            ProfileSetupScreen(
-                viewModel = authViewModel,
-                onProfileFinishedNav = {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                }
-            )
+            ProfileSetupScreen(viewModel = authViewModel, onProfileFinishedNav = {
+                navController.navigate(Screen.Dashboard.route) { popUpTo(Screen.Login.route) { inclusive = true } }
+            })
         }
 
-        // 5. Main Dashboard Engine View
+        // 5. Main Dashboard View
         composable(route = Screen.Dashboard.route) {
             DashboardScreen(
-                onChatClicked = { name -> navController.navigate(Screen.Chat.passName(name)) },
+                onChatClicked = { resolvedName, resolvedUid ->
+                    navController.navigate(Screen.Chat.passNameAndUid(resolvedName, resolvedUid))
+                },
                 onStatusClicked = { name -> navController.navigate(Screen.StatusViewer.passName(name)) },
                 onCallClicked = { name -> navController.navigate(Screen.VoiceCall.passName(name)) },
                 onFabClicked = { navController.navigate(Screen.SelectContact.route) },
@@ -98,90 +93,46 @@ fun SetupNavGraph(
             )
         }
 
-        // 6. One-to-One Classic Message Conversation Window View
+        // 6. One-to-One Conversation Layout Node with high fidelity preview route handlers
         composable(
             route = Screen.Chat.route,
-            arguments = listOf(navArgument("name") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("name") { type = NavType.StringType },
+                navArgument("uid") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val name = backStackEntry.arguments?.getString("name") ?: "User"
-            ChatScreen(userName = name, onBackClicked = { navController.popBackStack() })
-        }
+            val uid = backStackEntry.arguments?.getString("uid") ?: ""
 
-        // 7. Voice Call Layout Interface Canvas
-        composable(
-            route = Screen.VoiceCall.route,
-            arguments = listOf(navArgument("name") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val name = backStackEntry.arguments?.getString("name") ?: "User"
-            VoiceCallScreen(userName = name, onEndCallClicked = { navController.popBackStack() })
-        }
-
-        // 8. Video Call Preview Layout Frame Simulator
-        composable(
-            route = Screen.VideoCall.route,
-            arguments = listOf(navArgument("name") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val name = backStackEntry.arguments?.getString("name") ?: "User"
-            VideoCallScreen(userName = name, onEndCallClicked = { navController.popBackStack() })
-        }
-
-        // 9. Status Story Time-Bounded Segment Viewer View
-        composable(
-            route = Screen.StatusViewer.route,
-            arguments = listOf(navArgument("name") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val name = backStackEntry.arguments?.getString("name") ?: "User"
-            StatusViewerScreen(userName = name, onStoryTimedOut = { navController.popBackStack() })
-        }
-
-        // 10. Select Contact Screen
-        composable(route = Screen.SelectContact.route) {
-            SelectContactScreen(
+            ChatScreen(
+                userName = name,
+                receiverUid = uid,
+                viewModel = sharedChatViewModel,
                 onBackClicked = { navController.popBackStack() },
-                onCreateGroupClicked = { navController.navigate(Screen.CreateGroup.route) },
-                onContactSelected = { selectedName ->
-                    navController.navigate(Screen.Chat.passName(selectedName)) {
-                        popUpTo(Screen.Dashboard.route)
-                    }
-                }
+                onNavigateToImagePreview = { navController.navigate(Screen.ImagePreview.route) },
+                onNavigateToPdfPreview = { navController.navigate(Screen.PdfPreview.route) }
             )
         }
 
-        // 11. Multi-Participant Group Creation Filter Panels Component
-        composable(route = Screen.CreateGroup.route) {
-            CreateGroupScreen(
-                onBackClicked = { navController.popBackStack() },
-                onDoneClicked = { navController.popBackStack() }
-            )
+        // 7. Full-Screen Photo File View Layer Overlay Canvas Destination
+        composable(route = Screen.ImagePreview.route) {
+            ImagePreviewScreen(viewModel = sharedChatViewModel, onBackClicked = { navController.popBackStack() })
         }
 
-        // 12. App Settings Configuration List View
-        composable(route = Screen.Settings.route) {
-            SettingsScreen(
-                onBackClicked = { navController.popBackStack() },
-                onAccountClicked = { navController.navigate(Screen.AccountSettings.route) },
-                onChatsClicked = { navController.navigate(Screen.ChatsSettings.route) },
-                onNotificationsClicked = { navController.navigate(Screen.NotificationsSettings.route) }
-            )
+        // 8. Document PDF File Viewer Canvas Destination
+        composable(route = Screen.PdfPreview.route) {
+            PdfPreviewScreen(viewModel = sharedChatViewModel, onBackClicked = { navController.popBackStack() })
         }
 
-        // 13. Account sub-settings routing
-        composable(route = Screen.AccountSettings.route) {
-            AccountSettingsScreen(onBackClicked = { navController.popBackStack() })
-        }
-
-        // 14. Chats sub-settings routing
-        composable(route = Screen.ChatsSettings.route) {
-            ChatsSettingsScreen(
-                onBackClicked = { navController.popBackStack() },
-                isDarkMode = isDarkMode,
-                onThemeChanged = onThemeChanged
-            )
-        }
-
-        // 15. Notifications sub-settings routing
-        composable(route = Screen.NotificationsSettings.route) {
-            NotificationsSettingsScreen(onBackClicked = { navController.popBackStack() })
-        }
+        // Remaining Voice, Video Calling logs overlay nodes remain exact same as safe layout mapping structure
+        composable(route = Screen.VoiceCall.route, arguments = listOf(navArgument("name") { type = NavType.StringType })) { entry -> VoiceCallScreen(userName = entry.arguments?.getString("name") ?: "User", onEndCallClicked = { navController.popBackStack() }) }
+        composable(route = Screen.VideoCall.route, arguments = listOf(navArgument("name") { type = NavType.StringType })) { entry -> VideoCallScreen(userName = entry.arguments?.getString("name") ?: "User", onEndCallClicked = { navController.popBackStack() }) }
+        composable(route = Screen.StatusViewer.route, arguments = listOf(navArgument("name") { type = NavType.StringType })) { entry -> StatusViewerScreen(userName = entry.arguments?.getString("name") ?: "User", onStoryTimedOut = { navController.popBackStack() }) }
+        composable(route = Screen.SelectContact.route) { SelectContactScreen(onBackClicked = { navController.popBackStack() }, onCreateGroupClicked = { navController.navigate(Screen.CreateGroup.route) }, onContactSelected = { name, uid -> navController.navigate(Screen.Chat.passNameAndUid(name, uid)) { popUpTo(Screen.Dashboard.route) } }) }
+        composable(route = Screen.CreateGroup.route) { CreateGroupScreen(onBackClicked = { navController.popBackStack() }, onDoneClicked = { navController.popBackStack() }) }
+        composable(route = Screen.Settings.route) { SettingsScreen(onBackClicked = { navController.popBackStack() }, onAccountClicked = { navController.navigate(Screen.AccountSettings.route) }, onChatsClicked = { navController.navigate(Screen.ChatsSettings.route) }, onNotificationsClicked = { navController.navigate(Screen.NotificationsSettings.route) }) }
+        composable(route = Screen.AccountSettings.route) { AccountSettingsScreen(onBackClicked = { navController.popBackStack() }) }
+        composable(route = Screen.ChatsSettings.route) { ChatsSettingsScreen(onBackClicked = { navController.popBackStack() }, isDarkMode = isDarkMode, onThemeChanged = onThemeChanged) }
+        composable(route = Screen.NotificationsSettings.route) { NotificationsSettingsScreen(onBackClicked = { navController.popBackStack() }) }
     }
 }

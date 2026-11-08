@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    onChatClicked: (String) -> Unit,
+    onChatClicked: (String, String) -> Unit, // Modified signature context structure mapping
     onStatusClicked: (String) -> Unit,
     onCallClicked: (String) -> Unit,
     onFabClicked: () -> Unit,

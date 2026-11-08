@@ -3,6 +3,7 @@ package com.portfolio.chitchat.ui.auth
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.portfolio.chitchat.data.model.User
 import com.portfolio.chitchat.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,9 @@ class AuthViewModel : ViewModel() {
 
     var userPhoneNumber: String = ""
         private set
+
+    private val _existingProfile = MutableStateFlow<User?>(null)
+    val existingProfile: StateFlow<User?> = _existingProfile
 
     fun sendOtp(phone: String, activity: Activity) {
         userPhoneNumber = phone
@@ -58,6 +62,21 @@ class AuthViewModel : ViewModel() {
                     _authState.value = AuthState.ProfileCreated(true)
                 } else {
                     _authState.value = AuthState.Error("Profile Creation Failed")
+                }
+            }
+        }
+    }
+
+
+    fun checkForExistingProfile() {
+        _authState.value = AuthState.Loading
+        viewModelScope.launch {
+            repository.fetchExistingProfile { user ->
+                if (user != null) {
+                    _existingProfile.value = user
+                    _authState.value = AuthState.Idle // Reset loading state
+                } else {
+                    _authState.value = AuthState.Idle
                 }
             }
         }

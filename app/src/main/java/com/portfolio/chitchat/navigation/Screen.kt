@@ -8,12 +8,14 @@ sealed class Screen(val route: String) {
     }
     object ProfileSetup : Screen("profile_setup_screen")
     object Dashboard : Screen("dashboard_screen")
-    object Chat : Screen("chat_screen/{name}") {
-        fun passName(name: String) = "chat_screen/$name"
+    object Chat : Screen("chat_screen/{name}/{uid}") {
+        fun passNameAndUid(name: String, uid: String) = "chat_screen/$name/$uid"
     }
     object VoiceCall : Screen("voice_call_screen/{name}") {
         fun passName(name: String) = "voice_call_screen/$name"
     }
+
+
     object VideoCall : Screen("video_call_screen/{name}") {
         fun passName(name: String) = "video_call_screen/$name"
     }
@@ -27,4 +29,7 @@ sealed class Screen(val route: String) {
     object AccountSettings : Screen("account_settings_screen")
     object ChatsSettings : Screen("chats_settings_screen")
     object NotificationsSettings : Screen("notifications_settings_screen")
+
+    object ImagePreview : Screen("image_preview_screen")
+    object PdfPreview : Screen("pdf_preview_screen")
 }
