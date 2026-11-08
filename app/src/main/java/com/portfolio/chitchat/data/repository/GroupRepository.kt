@@ -38,25 +38,29 @@ class GroupRepository {
     fun sendGroupMessage(groupId: String, messageText: String, type: String = "text", base64Payload: String = "") {
         if (currentUid.isBlank() || groupId.isBlank()) return
 
-        val msgRef = firestore.collection("chats").document(groupId).collection("messages").document()
-        val messageInstance = Message(
-            messageId = msgRef.id,
-            senderId = currentUid,
-            text = messageText,
-            type = type,
-            fileBase64 = base64Payload,
-            timestamp = System.currentTimeMillis(),
-            status = "sent"
-        )
-
-        msgRef.set(messageInstance).addOnSuccessListener {
-            val previewText = if (type == "image") "🖼️ Photo" else if (type == "pdf") "📄 Document" else messageText
-            firestore.collection("chats").document(groupId).update(
-                mapOf(
-                    "lastMessage" to previewText,
-                    "lastMessageTimestamp" to System.currentTimeMillis()
-                )
+        firestore.collection("users").document(currentUid).get().addOnSuccessListener { doc ->
+            val senderName = doc.getString("name") ?: "Member"
+            val msgRef = firestore.collection("chats").document(groupId).collection("messages").document()
+            val messageInstance = Message(
+                messageId = msgRef.id,
+                senderId = currentUid,
+                senderName = senderName,
+                text = messageText,
+                type = type,
+                fileBase64 = base64Payload,
+                timestamp = System.currentTimeMillis(),
+                status = "sent"
             )
+
+            msgRef.set(messageInstance).addOnSuccessListener {
+                val previewText = if (type == "image") "🖼️ Photo" else if (type == "pdf") "📄 Document" else messageText
+                firestore.collection("chats").document(groupId).update(
+                    mapOf(
+                        "lastMessage" to "$senderName: $previewText",
+                        "lastMessageTimestamp" to System.currentTimeMillis()
+                    )
+                )
+            }
         }
     }
 

@@ -21,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.portfolio.chitchat.data.model.Message
 import com.portfolio.chitchat.ui.theme.WhatsappIncomingBubble
 import com.portfolio.chitchat.ui.theme.WhatsappOutgoingBubble
+import com.portfolio.chitchat.ui.theme.WhatsappTealGreen
 import com.portfolio.chitchat.utils.AudioPlayer
 import com.portfolio.chitchat.utils.ImageUtils
 import java.text.SimpleDateFormat
@@ -34,7 +35,6 @@ fun MessageBubble(message: Message) {
     val bubbleColor = if (isOutgoing) WhatsappOutgoingBubble else WhatsappIncomingBubble
     val context = LocalContext.current
 
-    // Audio Playback Player Lifecycle Instance Hook
     val audioPlayer = remember { AudioPlayer(context) }
 
     val timeLabel = remember(message.timestamp) {
@@ -68,7 +68,18 @@ fun MessageBubble(message: Message) {
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            // 1. DYNAMIC RENDERING: Image Media Streams Layout Block
+            // WhatsApp Group Chat Style Sender Name Banner for incoming messages
+            if (!isOutgoing && message.senderName.isNotBlank()) {
+                Text(
+                    text = message.senderName,
+                    color = WhatsappTealGreen,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
+
+            // 1. Image Media Streams Layout Block
             if (message.type == "image" && message.fileBase64.isNotBlank()) {
                 val bitmapImage = remember(message.fileBase64) {
                     ImageUtils.base64ToBitmap(message.fileBase64)
@@ -76,7 +87,7 @@ fun MessageBubble(message: Message) {
                 bitmapImage?.let {
                     Image(
                         bitmap = it.asImageBitmap(),
-                        contentDescription = "Base64 Shared Media Picture Thumbnail",
+                        contentDescription = "Media Picture",
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(180.dp)
@@ -86,7 +97,7 @@ fun MessageBubble(message: Message) {
                 }
             }
 
-            // 2. DYNAMIC RENDERING: PDF Documents Interface Layout Block
+            // 2. PDF Documents Interface Layout Block
             if (message.type == "pdf") {
                 Row(
                     modifier = Modifier
@@ -99,13 +110,13 @@ fun MessageBubble(message: Message) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(text = "Document.pdf", fontWeight = FontWeight.Bold, color = Color.Black, fontSize = 14.sp)
-                        Text(text = "Base64 Verified Payload File", color = Color.Gray, fontSize = 11.sp)
+                        Text(text = "PDF Document Payload", color = Color.Gray, fontSize = 11.sp)
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            // 3. DYNAMIC RENDERING: Voice Notes / Audio Playback Controller
+            // 3. Voice Notes / Audio Playback Controller
             if (message.type == "audio" && message.fileBase64.isNotBlank()) {
                 Surface(
                     onClick = { audioPlayer.playBase64Audio(message.fileBase64) },
@@ -132,14 +143,14 @@ fun MessageBubble(message: Message) {
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            // 4. DYNAMIC RENDERING: Standard Text Messages Node Frame fallback
+            // 4. Standard Text Messages Node Frame fallback
             if (message.text.isNotBlank() && (message.type == "text" || message.type.isBlank())) {
                 Text(text = message.text, color = Color.Black, fontSize = 15.sp)
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Time Labels and Dynamic Multi-State Checkmarks Ticks
+            // Time Labels and Ticks
             Row(
                 modifier = Modifier.align(Alignment.End),
                 verticalAlignment = Alignment.CenterVertically
