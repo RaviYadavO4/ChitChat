@@ -8,8 +8,8 @@ sealed class Screen(val route: String) {
     }
     object ProfileSetup : Screen("profile_setup_screen")
     object Dashboard : Screen("dashboard_screen")
-    object Chat : Screen("chat_screen/{name}/{uid}") {
-        fun passNameAndUid(name: String, uid: String) = "chat_screen/$name/$uid"
+    object Chat : Screen("chat_screen/{name}/{id}/{isGroup}") {
+        fun passChatDetails(name: String, id: String, isGroup: Boolean) = "chat_screen/$name/$id/$isGroup"
     }
     object SelectContact : Screen("select_contact_screen")
     object CreateGroup : Screen("create_group_screen")

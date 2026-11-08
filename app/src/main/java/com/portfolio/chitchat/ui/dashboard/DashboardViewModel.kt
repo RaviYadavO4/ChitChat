@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
-// Data class extending structural representations for active feed list items
 data class ActiveFeedItem(
     val chatMeta: Chat,
     val participantUser: User?
@@ -23,7 +22,6 @@ class DashboardViewModel : ViewModel() {
 
     private val _activeFeeds = MutableStateFlow<List<ActiveFeedItem>>(emptyList())
     val activeFeeds: StateFlow<List<ActiveFeedItem>> = _activeFeeds
-
 
     private val _isFeedLoading = MutableStateFlow(true)
     val isFeedLoading: StateFlow<Boolean> = _isFeedLoading
@@ -45,13 +43,25 @@ class DashboardViewModel : ViewModel() {
                         return@collect
                     }
 
-                    // Dynamically map and fetch structural metadata profiles for users
-                    chats.forEach { singleChat ->
-                        val targetUid = singleChat.members.firstOrNull { it != currentUid } ?: ""
-                        if (targetUid.isNotBlank()) {
-                            repository.fetchParticipantInfo(targetUid) { resolvedUser ->
-                                completeFeedItems.add(ActiveFeedItem(singleChat, resolvedUser))
-                                // Sync execution flow updating final streams
+                    chats.forEach { chat ->
+                        if (chat.isGroup) {
+                            completeFeedItems.add(ActiveFeedItem(chat, null))
+                            if (completeFeedItems.size == chats.size) {
+                                _activeFeeds.value = completeFeedItems.sortedByDescending { it.chatMeta.lastMessageTimestamp }
+                                _isFeedLoading.value = false
+                            }
+                        } else {
+                            val targetUid = chat.members.firstOrNull { it != currentUid } ?: ""
+                            if (targetUid.isNotBlank()) {
+                                repository.fetchParticipantInfo(targetUid) { resolvedUser ->
+                                    completeFeedItems.add(ActiveFeedItem(chat, resolvedUser))
+                                    if (completeFeedItems.size == chats.size) {
+                                        _activeFeeds.value = completeFeedItems.sortedByDescending { it.chatMeta.lastMessageTimestamp }
+                                        _isFeedLoading.value = false
+                                    }
+                                }
+                            } else {
+                                completeFeedItems.add(ActiveFeedItem(chat, null))
                                 if (completeFeedItems.size == chats.size) {
                                     _activeFeeds.value = completeFeedItems.sortedByDescending { it.chatMeta.lastMessageTimestamp }
                                     _isFeedLoading.value = false

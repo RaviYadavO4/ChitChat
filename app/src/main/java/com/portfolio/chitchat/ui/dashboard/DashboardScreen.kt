@@ -15,7 +15,7 @@ import com.portfolio.chitchat.ui.theme.WhatsappTealGreen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    onChatClicked: (String, String) -> Unit,
+    onChatClicked: (String, String, Boolean) -> Unit,
     onFabClicked: () -> Unit,
     onSettingsClicked: () -> Unit
 ) {

@@ -1,5 +1,7 @@
 package com.portfolio.chitchat.ui.chat
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,6 +39,7 @@ import java.util.Locale
 fun ChatScreen(
     userName: String,
     receiverUid: String,
+    isGroup: Boolean,
     viewModel: ChatViewModel,
     onBackClicked: () -> Unit,
     onNavigateToImagePreview: () -> Unit,
@@ -53,7 +56,7 @@ fun ChatScreen(
     var editTextFieldState by remember { mutableStateOf("") }
 
     LaunchedEffect(key1 = receiverUid) {
-        viewModel.loadAndWatchMessages(receiverUid)
+        viewModel.loadAndWatchMessages(receiverUid, isGroup)
     }
 
     Scaffold(
@@ -62,7 +65,11 @@ fun ChatScreen(
                 title = {
                     Column {
                         Text(text = userName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text(text = "online", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                        Text(
+                            text = if (isGroup) "👥 Group Chat" else "🔒 End-to-end encrypted",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(alpha = 0.85f)
+                        )
                     }
                 },
                 navigationIcon = {
@@ -78,7 +85,7 @@ fun ChatScreen(
         },
         bottomBar = {
             ChatInputBar(onSendMessageDispatched = { msgText, msgType, base64Payload ->
-                viewModel.dispatchMessage(receiverUid = receiverUid, text = msgText, type = msgType, base64Payload = base64Payload)
+                viewModel.dispatchMessage(receiverUid, isGroup, msgText, msgType, base64Payload)
             })
         }
     ) { paddingValues ->
@@ -88,7 +95,11 @@ fun ChatScreen(
                 .padding(paddingValues)
                 .background(Color(0xFFECE5DD))
         ) {
-            if (isChatLoading) {
+            AnimatedVisibility(
+                visible = isChatLoading,
+                enter = fadeIn(animationSpec = tween(300)),
+                exit = fadeOut(animationSpec = tween(300))
+            ) {
                 LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(6) { index ->
                         val alignmentSetting = if (index % 2 == 0) Alignment.CenterEnd else Alignment.CenterStart
@@ -97,8 +108,17 @@ fun ChatScreen(
                         }
                     }
                 }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentPadding = PaddingValues(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            }
+
+            AnimatedVisibility(
+                visible = !isChatLoading,
+                enter = fadeIn(animationSpec = tween(400))
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     items(liveMessages, key = { it.messageId }) { fbMessage ->
                         Box(
                             modifier = Modifier
@@ -135,7 +155,7 @@ fun ChatScreen(
                         val currentAuthUid = remember { com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: "" }
                         val isMyOwnMessage = selectedMessageForAction!!.senderId == currentAuthUid
 
-                        if (isMyOwnMessage && selectedMessageForAction!!.type == "text") {
+                        if (isMyOwnMessage && selectedMessageForAction!!.type == "text" && !isGroup) {
                             ListItem(
                                 headlineContent = { Text("Edit Message", color = Color.Black) },
                                 leadingContent = { Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = Color.Gray) },
@@ -143,25 +163,27 @@ fun ChatScreen(
                             )
                         }
 
-                        if (isMyOwnMessage) {
+                        if (isMyOwnMessage && !isGroup) {
                             ListItem(
                                 headlineContent = { Text("Delete for Everyone", color = Color.Red) },
                                 leadingContent = { Icon(Icons.Filled.Delete, contentDescription = "Delete Everyone", tint = Color.Red) },
                                 modifier = Modifier.clickable {
                                     showActionBottomSheet = false
-                                    viewModel.requestDeleteForEveryone(receiverUid, selectedMessageForAction!!.messageId)
+                                    viewModel.requestDeleteForEveryone(receiverUid, isGroup, selectedMessageForAction!!.messageId)
                                 }
                             )
                         }
 
-                        ListItem(
-                            headlineContent = { Text("Delete for Me", color = Color.Black) },
-                            leadingContent = { Icon(Icons.Filled.Delete, contentDescription = "Delete Me", tint = Color.Gray) },
-                            modifier = Modifier.clickable {
-                                showActionBottomSheet = false
-                                viewModel.requestDeleteForMe(receiverUid, selectedMessageForAction!!.messageId)
-                            }
-                        )
+                        if (!isGroup) {
+                            ListItem(
+                                headlineContent = { Text("Delete for Me", color = Color.Black) },
+                                leadingContent = { Icon(Icons.Filled.Delete, contentDescription = "Delete Me", tint = Color.Gray) },
+                                modifier = Modifier.clickable {
+                                    showActionBottomSheet = false
+                                    viewModel.requestDeleteForMe(receiverUid, isGroup, selectedMessageForAction!!.messageId)
+                                }
+                            )
+                        }
 
                         ListItem(
                             headlineContent = { Text("Message Info", color = Color.Black) },
@@ -182,7 +204,7 @@ fun ChatScreen(
                     confirmButton = {
                         TextButton(onClick = {
                             if (editTextFieldState.isNotBlank()) {
-                                viewModel.requestMessageEdit(receiverUid, selectedMessageForAction!!.messageId, editTextFieldState)
+                                viewModel.requestMessageEdit(receiverUid, isGroup, selectedMessageForAction!!.messageId, editTextFieldState)
                                 showEditDialog = false
                             }
                         }) { Text("UPDATE", color = WhatsappTealGreen, fontWeight = FontWeight.Bold) }
@@ -200,12 +222,12 @@ fun ChatScreen(
                     title = { Text("Message Info") },
                     text = {
                         Column {
-                            Text(text = "Ticks Status: ${selectedMessageForAction!!.status.replaceFirstChar { it.uppercase() }}", fontSize = 16.sp, color = Color.Black)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "Timestamp: $formattedTime", fontSize = 14.sp, color = Color.Gray)
+                            Text(text = "Sent at: $formattedTime")
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = "Status: ${selectedMessageForAction!!.status}")
                         }
                     },
-                    confirmButton = { TextButton(onClick = { showInfoDialog = false }) { Text("OK", color = WhatsappTealGreen, fontWeight = FontWeight.Bold) } }
+                    confirmButton = { TextButton(onClick = { showInfoDialog = false }) { Text("OK", color = WhatsappTealGreen) } }
                 )
             }
         }

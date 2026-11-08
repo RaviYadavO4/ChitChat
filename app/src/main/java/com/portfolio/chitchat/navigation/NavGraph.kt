@@ -73,7 +73,7 @@ fun SetupNavGraph(
 
         composable(route = Screen.Dashboard.route) {
             DashboardScreen(
-                onChatClicked = { name, uid -> navController.navigate(Screen.Chat.passNameAndUid(name, uid)) },
+                onChatClicked = { name, id, isGroup -> navController.navigate(Screen.Chat.passChatDetails(name, id, isGroup)) },
                 onFabClicked = { navController.navigate(Screen.SelectContact.route) },
                 onSettingsClicked = { navController.navigate(Screen.Settings.route) }
             )
@@ -83,15 +83,18 @@ fun SetupNavGraph(
             route = Screen.Chat.route,
             arguments = listOf(
                 navArgument("name") { type = NavType.StringType },
-                navArgument("uid") { type = NavType.StringType }
+                navArgument("id") { type = NavType.StringType },
+                navArgument("isGroup") { type = NavType.BoolType }
             )
         ) { backStackEntry ->
-            val name = backStackEntry.arguments?.getString("name") ?: "User"
-            val uid = backStackEntry.arguments?.getString("uid") ?: ""
+            val name = backStackEntry.arguments?.getString("name") ?: "Chat"
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            val isGroup = backStackEntry.arguments?.getBoolean("isGroup") ?: false
 
             ChatScreen(
                 userName = name,
-                receiverUid = uid,
+                receiverUid = id,
+                isGroup = isGroup,
                 viewModel = sharedChatViewModel,
                 onBackClicked = { navController.popBackStack() },
                 onNavigateToImagePreview = { navController.navigate(Screen.ImagePreview.route) },
@@ -102,7 +105,7 @@ fun SetupNavGraph(
         composable(route = Screen.ImagePreview.route) { ImagePreviewScreen(viewModel = sharedChatViewModel, onBackClicked = { navController.popBackStack() }) }
         composable(route = Screen.PdfPreview.route) { PdfPreviewScreen(viewModel = sharedChatViewModel, onBackClicked = { navController.popBackStack() }) }
 
-        composable(route = Screen.SelectContact.route) { SelectContactScreen(onBackClicked = { navController.popBackStack() }, onCreateGroupClicked = { navController.navigate(Screen.CreateGroup.route) }, onContactSelected = { name, uid -> navController.navigate(Screen.Chat.passNameAndUid(name, uid)) { popUpTo(Screen.Dashboard.route) } }) }
+        composable(route = Screen.SelectContact.route) { SelectContactScreen(onBackClicked = { navController.popBackStack() }, onCreateGroupClicked = { navController.navigate(Screen.CreateGroup.route) }, onContactSelected = { name, uid -> navController.navigate(Screen.Chat.passChatDetails(name, uid, false)) { popUpTo(Screen.Dashboard.route) } }) }
         composable(route = Screen.CreateGroup.route) { CreateGroupScreen(onBackClicked = { navController.popBackStack() }, onDoneClicked = { navController.popBackStack() }) }
         composable(route = Screen.Settings.route) { SettingsScreen(onBackClicked = { navController.popBackStack() }, onAccountClicked = { navController.navigate(Screen.AccountSettings.route) }, onChatsClicked = { navController.navigate(Screen.ChatsSettings.route) }, onNotificationsClicked = { navController.navigate(Screen.NotificationsSettings.route) }) }
         composable(route = Screen.AccountSettings.route) { AccountSettingsScreen(onBackClicked = { navController.popBackStack() }) }
