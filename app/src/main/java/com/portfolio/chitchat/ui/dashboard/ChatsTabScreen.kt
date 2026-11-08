@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,7 +30,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun ChatsTabScreen(onChatClicked: (String, String, Boolean) -> Unit, onFabClicked: () -> Unit) {
+fun ChatsTabScreen(onChatClicked: (String, String) -> Unit, onFabClicked: () -> Unit) {
     val dashboardViewModel: DashboardViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val activeChatItems by dashboardViewModel.activeFeeds.collectAsState()
     val isFeedLoading by dashboardViewModel.isFeedLoading.collectAsState()
@@ -66,18 +65,17 @@ fun ChatsTabScreen(onChatClicked: (String, String, Boolean) -> Unit, onFabClicke
         ) {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(activeChatItems, key = { it.chatMeta.chatId }) { item ->
-                    val isGroup = item.chatMeta.isGroup
-                    val title = if (isGroup) item.chatMeta.groupName else (item.participantUser?.name ?: "User")
-                    val id = if (isGroup) item.chatMeta.chatId else (item.participantUser?.uid ?: "")
-
-                    Surface(
-                        onClick = { onChatClicked(title, id, isGroup) },
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        ChatFeedRow(item)
+                    val user = item.participantUser
+                    if (user != null) {
+                        Surface(
+                            onClick = { onChatClicked(user.name, user.uid) },
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            ChatFeedRow(item)
+                        }
+                        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.2f), thickness = 0.5.dp)
                     }
-                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.2f), thickness = 0.5.dp)
                 }
             }
         }
@@ -100,7 +98,6 @@ fun ChatsTabScreen(onChatClicked: (String, String, Boolean) -> Unit, onFabClicke
 fun ChatFeedRow(item: ActiveFeedItem) {
     val userMeta = item.participantUser
     val chatLog = item.chatMeta
-    val isGroup = chatLog.isGroup
 
     val timeLabel = remember(chatLog.lastMessageTimestamp) {
         if (chatLog.lastMessageTimestamp == 0L) "" else {
@@ -115,17 +112,7 @@ fun ChatFeedRow(item: ActiveFeedItem) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (isGroup) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(com.portfolio.chitchat.ui.theme.WhatsappTealGreen),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.Group, contentDescription = "Group", tint = Color.White, modifier = Modifier.size(26.dp))
-            }
-        } else if (userMeta != null && userMeta.profileImageBase64.isNotBlank()) {
+        if (userMeta != null && userMeta.profileImageBase64.isNotBlank()) {
             val profileBitmap = remember(userMeta.profileImageBase64) {
                 ImageUtils.base64ToBitmap(userMeta.profileImageBase64)
             }
@@ -153,7 +140,7 @@ fun ChatFeedRow(item: ActiveFeedItem) {
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = if (isGroup) chatLog.groupName else (userMeta?.name ?: "ChitChat User"),
+                text = userMeta?.name ?: "ChitChat User",
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onBackground

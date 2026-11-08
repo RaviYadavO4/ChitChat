@@ -1,6 +1,5 @@
 package com.portfolio.chitchat.ui.contacts
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -10,7 +9,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -29,15 +27,11 @@ import com.portfolio.chitchat.data.repository.ContactRepository
 import com.portfolio.chitchat.ui.theme.WhatsappTealGreen
 import com.portfolio.chitchat.utils.ImageUtils
 
-
-data class DummyContact(val id: String, val name: String, val status: String)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectContactScreen(
     onBackClicked: () -> Unit,
-    onCreateGroupClicked: () -> Unit,
-    onContactSelected: (String, String) -> Unit // Updated to pass both Name and explicit UID
+    onContactSelected: (String, String) -> Unit
 ) {
     val repository = remember { ContactRepository() }
     var contactsList by remember { mutableStateOf<List<User>>(emptyList()) }
@@ -46,7 +40,6 @@ fun SelectContactScreen(
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    // Fetch live users directly on interface launch
     LaunchedEffect(Unit) {
         repository.fetchAllChitChatContacts { fetched ->
             contactsList = fetched
@@ -92,7 +85,7 @@ fun SelectContactScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { isSearchActive = !isSearchActive; if(!isSearchActive) searchQuery = "" }) {
+                    IconButton(onClick = { isSearchActive = !isSearchActive; if (!isSearchActive) searchQuery = "" }) {
                         Icon(imageVector = if (isSearchActive) Icons.Filled.Close else Icons.Filled.Search, contentDescription = "Search", tint = Color.White)
                     }
                 },
@@ -107,7 +100,6 @@ fun SelectContactScreen(
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     if (!isSearchActive || searchQuery.isBlank()) {
                         item {
-                            ActionContactRow(icon = Icons.Filled.GroupAdd, title = "New group", onClick = onCreateGroupClicked)
                             ActionContactRow(icon = Icons.Filled.PersonAdd, title = "New contact", onClick = { })
                             Text(text = "Contacts on ChitChat", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
                         }
@@ -149,7 +141,6 @@ fun LiveContactRow(user: User) {
     }
 }
 
-
 @Composable
 fun ActionContactRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, onClick: () -> Unit) {
     Surface(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
@@ -171,5 +162,3 @@ fun ActionContactRow(icon: androidx.compose.ui.graphics.vector.ImageVector, titl
         }
     }
 }
-
-

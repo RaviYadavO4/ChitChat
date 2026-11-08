@@ -21,7 +21,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.portfolio.chitchat.data.model.Message
 import com.portfolio.chitchat.ui.theme.WhatsappIncomingBubble
 import com.portfolio.chitchat.ui.theme.WhatsappOutgoingBubble
-import com.portfolio.chitchat.ui.theme.WhatsappTealGreen
 import com.portfolio.chitchat.utils.AudioPlayer
 import com.portfolio.chitchat.utils.ImageUtils
 import java.text.SimpleDateFormat
@@ -68,17 +67,6 @@ fun MessageBubble(message: Message) {
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            // WhatsApp Group Chat Style Sender Name Banner for incoming messages
-            if (!isOutgoing && message.senderName.isNotBlank()) {
-                Text(
-                    text = message.senderName,
-                    color = WhatsappTealGreen,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 2.dp)
-                )
-            }
-
             // 1. Image Media Streams Layout Block
             if (message.type == "image" && message.fileBase64.isNotBlank()) {
                 val bitmapImage = remember(message.fileBase64) {

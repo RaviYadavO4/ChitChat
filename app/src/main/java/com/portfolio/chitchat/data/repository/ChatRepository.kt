@@ -21,39 +21,34 @@ class ChatRepository {
     fun sendMessage(receiverUid: String, messageText: String, type: String, fileBase64: String, onComplete: (Boolean) -> Unit) {
         if (currentUid.isBlank() || receiverUid.isBlank()) return onComplete(false)
         val chatId = getSingleChatId(receiverUid)
+        val messageRef = firestore.collection("chats").document(chatId).collection("messages").document()
 
-        firestore.collection("users").document(currentUid).get().addOnSuccessListener { doc ->
-            val senderName = doc.getString("name") ?: "User"
-            val messageRef = firestore.collection("chats").document(chatId).collection("messages").document()
+        val messageInstance = Message(
+            messageId = messageRef.id,
+            senderId = currentUid,
+            text = messageText,
+            type = type,
+            fileBase64 = fileBase64,
+            timestamp = System.currentTimeMillis(),
+            status = "sent"
+        )
 
-            val messageInstance = Message(
-                messageId = messageRef.id,
-                senderId = currentUid,
-                senderName = senderName,
-                text = messageText,
-                type = type,
-                fileBase64 = fileBase64,
-                timestamp = System.currentTimeMillis(),
-                status = "sent"
-            )
-
-            messageRef.set(messageInstance)
-                .addOnSuccessListener {
-                    val previewText = if (type == "image") "🖼️ Photo" else if (type == "pdf") "📄 Document" else messageText
-                    val chatSessionUpdate = hashMapOf(
-                        "chatId" to chatId,
-                        "isGroup" to false,
-                        "groupName" to "",
-                        "groupAdmin" to "",
-                        "members" to listOf(currentUid, receiverUid),
-                        "lastMessage" to previewText,
-                        "lastMessageTimestamp" to System.currentTimeMillis()
-                    )
-                    firestore.collection("chats").document(chatId).set(chatSessionUpdate)
-                    onComplete(true)
-                }
-                .addOnFailureListener { onComplete(false) }
-        }.addOnFailureListener { onComplete(false) }
+        messageRef.set(messageInstance)
+            .addOnSuccessListener {
+                val previewText = if (type == "image") "🖼️ Photo" else if (type == "pdf") "📄 Document" else messageText
+                val chatSessionUpdate = hashMapOf(
+                    "chatId" to chatId,
+                    "isGroup" to false,
+                    "groupName" to "",
+                    "groupAdmin" to "",
+                    "members" to listOf(currentUid, receiverUid),
+                    "lastMessage" to previewText,
+                    "lastMessageTimestamp" to System.currentTimeMillis()
+                )
+                firestore.collection("chats").document(chatId).set(chatSessionUpdate)
+                onComplete(true)
+            }
+            .addOnFailureListener { onComplete(false) }
     }
 
     fun listenToMessages(receiverUid: String): Flow<List<Message>> = callbackFlow {

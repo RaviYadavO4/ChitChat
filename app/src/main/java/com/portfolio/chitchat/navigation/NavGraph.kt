@@ -19,7 +19,6 @@ import com.portfolio.chitchat.ui.chat.ChatViewModel
 import com.portfolio.chitchat.ui.chat.ImagePreviewScreen
 import com.portfolio.chitchat.ui.chat.PdfPreviewScreen
 import com.portfolio.chitchat.ui.contacts.SelectContactScreen
-import com.portfolio.chitchat.ui.contacts.CreateGroupScreen
 import com.portfolio.chitchat.ui.settings.SettingsScreen
 import com.portfolio.chitchat.ui.settings.sub.AccountSettingsScreen
 import com.portfolio.chitchat.ui.settings.sub.ChatsSettingsScreen
@@ -73,7 +72,7 @@ fun SetupNavGraph(
 
         composable(route = Screen.Dashboard.route) {
             DashboardScreen(
-                onChatClicked = { name, id, isGroup -> navController.navigate(Screen.Chat.passChatDetails(name, id, isGroup)) },
+                onChatClicked = { name, uid -> navController.navigate(Screen.Chat.passNameAndUid(name, uid)) },
                 onFabClicked = { navController.navigate(Screen.SelectContact.route) },
                 onSettingsClicked = { navController.navigate(Screen.Settings.route) }
             )
@@ -83,18 +82,15 @@ fun SetupNavGraph(
             route = Screen.Chat.route,
             arguments = listOf(
                 navArgument("name") { type = NavType.StringType },
-                navArgument("id") { type = NavType.StringType },
-                navArgument("isGroup") { type = NavType.BoolType }
+                navArgument("uid") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val name = backStackEntry.arguments?.getString("name") ?: "Chat"
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-            val isGroup = backStackEntry.arguments?.getBoolean("isGroup") ?: false
+            val uid = backStackEntry.arguments?.getString("uid") ?: ""
 
             ChatScreen(
                 userName = name,
-                receiverUid = id,
-                isGroup = isGroup,
+                receiverUid = uid,
                 viewModel = sharedChatViewModel,
                 onBackClicked = { navController.popBackStack() },
                 onNavigateToImagePreview = { navController.navigate(Screen.ImagePreview.route) },
@@ -105,8 +101,7 @@ fun SetupNavGraph(
         composable(route = Screen.ImagePreview.route) { ImagePreviewScreen(viewModel = sharedChatViewModel, onBackClicked = { navController.popBackStack() }) }
         composable(route = Screen.PdfPreview.route) { PdfPreviewScreen(viewModel = sharedChatViewModel, onBackClicked = { navController.popBackStack() }) }
 
-        composable(route = Screen.SelectContact.route) { SelectContactScreen(onBackClicked = { navController.popBackStack() }, onCreateGroupClicked = { navController.navigate(Screen.CreateGroup.route) }, onContactSelected = { name, uid -> navController.navigate(Screen.Chat.passChatDetails(name, uid, false)) { popUpTo(Screen.Dashboard.route) } }) }
-        composable(route = Screen.CreateGroup.route) { CreateGroupScreen(onBackClicked = { navController.popBackStack() }, onDoneClicked = { navController.popBackStack() }) }
+        composable(route = Screen.SelectContact.route) { SelectContactScreen(onBackClicked = { navController.popBackStack() }, onContactSelected = { name, uid -> navController.navigate(Screen.Chat.passNameAndUid(name, uid)) { popUpTo(Screen.Dashboard.route) } }) }
         composable(route = Screen.Settings.route) { SettingsScreen(onBackClicked = { navController.popBackStack() }, onAccountClicked = { navController.navigate(Screen.AccountSettings.route) }, onChatsClicked = { navController.navigate(Screen.ChatsSettings.route) }, onNotificationsClicked = { navController.navigate(Screen.NotificationsSettings.route) }) }
         composable(route = Screen.AccountSettings.route) { AccountSettingsScreen(onBackClicked = { navController.popBackStack() }) }
         composable(route = Screen.ChatsSettings.route) { ChatsSettingsScreen(onBackClicked = { navController.popBackStack() }, isDarkMode = isDarkMode, onThemeChanged = onThemeChanged) }

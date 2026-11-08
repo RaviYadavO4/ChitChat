@@ -37,32 +37,22 @@ class DashboardViewModel : ViewModel() {
                 .collect { chats ->
                     val completeFeedItems = mutableListOf<ActiveFeedItem>()
 
-                    if (chats.isEmpty()) {
+                    val singleChats = chats.filter { !it.isGroup }
+
+                    if (singleChats.isEmpty()) {
                         _activeFeeds.value = emptyList()
                         _isFeedLoading.value = false
                         return@collect
                     }
 
-                    chats.forEach { chat ->
-                        if (chat.isGroup) {
-                            completeFeedItems.add(ActiveFeedItem(chat, null))
-                            if (completeFeedItems.size == chats.size) {
-                                _activeFeeds.value = completeFeedItems.sortedByDescending { it.chatMeta.lastMessageTimestamp }
-                                _isFeedLoading.value = false
-                            }
-                        } else {
-                            val targetUid = chat.members.firstOrNull { it != currentUid } ?: ""
-                            if (targetUid.isNotBlank()) {
-                                repository.fetchParticipantInfo(targetUid) { resolvedUser ->
+                    singleChats.forEach { chat ->
+                        val targetUid = chat.members.firstOrNull { it != currentUid } ?: ""
+                        if (targetUid.isNotBlank()) {
+                            repository.fetchParticipantInfo(targetUid) { resolvedUser ->
+                                if (resolvedUser != null) {
                                     completeFeedItems.add(ActiveFeedItem(chat, resolvedUser))
-                                    if (completeFeedItems.size == chats.size) {
-                                        _activeFeeds.value = completeFeedItems.sortedByDescending { it.chatMeta.lastMessageTimestamp }
-                                        _isFeedLoading.value = false
-                                    }
                                 }
-                            } else {
-                                completeFeedItems.add(ActiveFeedItem(chat, null))
-                                if (completeFeedItems.size == chats.size) {
+                                if (completeFeedItems.size == singleChats.size) {
                                     _activeFeeds.value = completeFeedItems.sortedByDescending { it.chatMeta.lastMessageTimestamp }
                                     _isFeedLoading.value = false
                                 }

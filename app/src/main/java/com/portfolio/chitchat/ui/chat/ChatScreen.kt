@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -41,7 +40,6 @@ import java.util.Locale
 fun ChatScreen(
     userName: String,
     receiverUid: String,
-    isGroup: Boolean,
     viewModel: ChatViewModel,
     onBackClicked: () -> Unit,
     onNavigateToImagePreview: () -> Unit,
@@ -58,7 +56,7 @@ fun ChatScreen(
     var editTextFieldState by remember { mutableStateOf("") }
 
     LaunchedEffect(key1 = receiverUid) {
-        viewModel.loadAndWatchMessages(receiverUid, isGroup)
+        viewModel.loadAndWatchMessages(receiverUid)
     }
 
     Scaffold(
@@ -73,22 +71,18 @@ fun ChatScreen(
                                 .background(Color.White.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (isGroup) {
-                                Icon(Icons.Filled.Group, contentDescription = "Group", tint = Color.White, modifier = Modifier.size(20.dp))
-                            } else {
-                                Text(
-                                    text = userName.take(1).uppercase(),
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    fontSize = 16.sp
-                                )
-                            }
+                            Text(
+                                text = userName.take(1).uppercase(),
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 16.sp
+                            )
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(text = userName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             Text(
-                                text = if (isGroup) "👥 Group • Read by all members" else "🔒 End-to-end encrypted",
+                                text = "🔒 End-to-end encrypted",
                                 fontSize = 11.sp,
                                 color = Color.White.copy(alpha = 0.85f)
                             )
@@ -108,7 +102,7 @@ fun ChatScreen(
         },
         bottomBar = {
             ChatInputBar(onSendMessageDispatched = { msgText, msgType, base64Payload ->
-                viewModel.dispatchMessage(receiverUid, isGroup, msgText, msgType, base64Payload)
+                viewModel.dispatchMessage(receiverUid, msgText, msgType, base64Payload)
             })
         }
     ) { paddingValues ->
@@ -178,7 +172,7 @@ fun ChatScreen(
                         val currentAuthUid = remember { com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: "" }
                         val isMyOwnMessage = selectedMessageForAction!!.senderId == currentAuthUid
 
-                        if (isMyOwnMessage && selectedMessageForAction!!.type == "text" && !isGroup) {
+                        if (isMyOwnMessage && selectedMessageForAction!!.type == "text") {
                             ListItem(
                                 headlineContent = { Text("Edit Message", color = Color.Black) },
                                 leadingContent = { Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = Color.Gray) },
@@ -186,27 +180,25 @@ fun ChatScreen(
                             )
                         }
 
-                        if (isMyOwnMessage && !isGroup) {
+                        if (isMyOwnMessage) {
                             ListItem(
                                 headlineContent = { Text("Delete for Everyone", color = Color.Red) },
                                 leadingContent = { Icon(Icons.Filled.Delete, contentDescription = "Delete Everyone", tint = Color.Red) },
                                 modifier = Modifier.clickable {
                                     showActionBottomSheet = false
-                                    viewModel.requestDeleteForEveryone(receiverUid, isGroup, selectedMessageForAction!!.messageId)
+                                    viewModel.requestDeleteForEveryone(receiverUid, selectedMessageForAction!!.messageId)
                                 }
                             )
                         }
 
-                        if (!isGroup) {
-                            ListItem(
-                                headlineContent = { Text("Delete for Me", color = Color.Black) },
-                                leadingContent = { Icon(Icons.Filled.Delete, contentDescription = "Delete Me", tint = Color.Gray) },
-                                modifier = Modifier.clickable {
-                                    showActionBottomSheet = false
-                                    viewModel.requestDeleteForMe(receiverUid, isGroup, selectedMessageForAction!!.messageId)
-                                }
-                            )
-                        }
+                        ListItem(
+                            headlineContent = { Text("Delete for Me", color = Color.Black) },
+                            leadingContent = { Icon(Icons.Filled.Delete, contentDescription = "Delete Me", tint = Color.Gray) },
+                            modifier = Modifier.clickable {
+                                showActionBottomSheet = false
+                                viewModel.requestDeleteForMe(receiverUid, selectedMessageForAction!!.messageId)
+                            }
+                        )
 
                         ListItem(
                             headlineContent = { Text("Message Info", color = Color.Black) },
@@ -227,7 +219,7 @@ fun ChatScreen(
                     confirmButton = {
                         TextButton(onClick = {
                             if (editTextFieldState.isNotBlank()) {
-                                viewModel.requestMessageEdit(receiverUid, isGroup, selectedMessageForAction!!.messageId, editTextFieldState)
+                                viewModel.requestMessageEdit(receiverUid, selectedMessageForAction!!.messageId, editTextFieldState)
                                 showEditDialog = false
                             }
                         }) { Text("UPDATE", color = WhatsappTealGreen, fontWeight = FontWeight.Bold) }
