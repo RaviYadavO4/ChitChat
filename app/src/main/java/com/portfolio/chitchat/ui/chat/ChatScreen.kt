@@ -9,11 +9,13 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -63,13 +65,34 @@ fun ChatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(text = userName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text(
-                            text = if (isGroup) "👥 Group Chat • Read by all members" else "🔒 End-to-end encrypted",
-                            fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.85f)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isGroup) {
+                                Icon(Icons.Filled.Group, contentDescription = "Group", tint = Color.White, modifier = Modifier.size(20.dp))
+                            } else {
+                                Text(
+                                    text = userName.take(1).uppercase(),
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(text = userName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(
+                                text = if (isGroup) "👥 Group • Read by all members" else "🔒 End-to-end encrypted",
+                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
